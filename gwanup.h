@@ -116,6 +116,7 @@ gw_mpart_t *gw_mpart_parser (ARGV_, int *err);
 // Validation
 // new validate condition
 gw_val_cond_t *gw_val_cond_new (char *field, int type);
+void gw_val_cond_free(gw_val_cond_t *cond);
 void gw_val_cond_set (gw_val_cond_t *cond, char *field, int type);
 
 // validate function
@@ -495,10 +496,8 @@ gw_val_cond_t *gw_val_cond_new (char *field, int type)
 void gw_val_cond_free(gw_val_cond_t *cond)
 {
 	free(cond->field);
-
 	if(cond->type == GW_VAL_CONTAINS)
 		free(cond->contains);
-
 	free(cond);
 }
 
@@ -507,6 +506,8 @@ void gw_val_cond_set (gw_val_cond_t *cond, char *field, int type)
 	if(cond == NULL) return;
 
 	free(cond->field);
+	if(cond->type == GW_VAL_CONTAINS)
+		free(cond->contains);
 	cond->field = strdup(field);
 	cond->type = type;
 	cond->len.min = 0;
