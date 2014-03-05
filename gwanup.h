@@ -485,18 +485,29 @@ gw_val_cond_t *gw_val_cond_new (char *field, int type)
 	gw_val_cond_t *cond = (gw_val_cond_t *) malloc(sizeof(gw_val_cond_t));
 	if(cond == NULL) return NULL;
 
-	cond->field = field;
+	cond->field = strdup(field);
 	cond->type = type;
 	cond->contains = NULL;
 
 	return cond;
 }
 
+void gw_val_cond_free(gw_val_cond_t *cond)
+{
+	free(cond->field);
+
+	if(cond->type == GW_VAL_CONTAINS)
+		free(cond->contains);
+
+	free(cond);
+}
+
 void gw_val_cond_set (gw_val_cond_t *cond, char *field, int type)
 {
 	if(cond == NULL) return;
 
-	cond->field = field;
+	free(cond->field);
+	cond->field = strdup(field);
 	cond->type = type;
 	cond->len.min = 0;
 	cond->len.max = 0;
@@ -625,7 +636,7 @@ bool gw_validate_null (gw_val_cond_t *cond, char *field)
 bool gw_validate_contains (gw_val_cond_t *cond, char *field, char *contains)
 {
 	gw_val_cond_set(cond, field, GW_VAL_CONTAINS);
-	cond->contains = contains;
+	cond->contains = strdup(contains);
 
 	gw_validate_field(&cond, 1);
 
