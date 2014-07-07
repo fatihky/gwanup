@@ -2,7 +2,6 @@
 // C servlet sample for the G-WAN Web Application Server (http://trustleap.ch/)
 // ----------------------------------------------------------------------------
 // cookie-example.c: set a cookie
-//
 // ============================================================================
 
 #include "gwan.h" // G-WAN exported functions
