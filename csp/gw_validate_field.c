@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
 	// Cleaning data
 	if(auth == true) free(uid);
-	gw_val_cond_free(cond);
+	free(cond);
 
 	return 200;
 }
