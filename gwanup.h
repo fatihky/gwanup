@@ -108,7 +108,7 @@ xbuf_t *to_sha2 (char *input);
 
 // generate random cookie from input
 xbuf_t *gw_gen_cookie (char *input);
-xbuf_t *gw_gen_cookie_header (char *input, xbuf_t **cookie_dst);
+xbuf_t *gw_gen_cookie_header (char *name, char *value, int ttl);
 
 // Multipart parser (upload)
 gw_mpart_t *gw_mpart_parser (ARGV_, int *err);
@@ -116,7 +116,6 @@ gw_mpart_t *gw_mpart_parser (ARGV_, int *err);
 // Validation
 // new validate condition
 gw_val_cond_t *gw_val_cond_new (char *field, int type);
-void gw_val_cond_free(gw_val_cond_t *cond);
 void gw_val_cond_set (gw_val_cond_t *cond, char *field, int type);
 
 // validate function
@@ -193,7 +192,8 @@ static inline void destroy_data (data_t **Data)
 {
 	data_t *data = *Data;
 
-	if(data->main_page) {
+	if(data->main_page)
+	{
 		xbuf_free(data->main_page);
 		free(data->main_page);
 	}
@@ -313,20 +313,16 @@ xbuf_t *gw_gen_cookie (char *input)
 	return out;
 }
 
-xbuf_t *gw_gen_cookie_header (char *input, xbuf_t **cookie_dst)
+// ttl: time to live(in minutes)
+xbuf_t *gw_gen_cookie_header (char *name, char *value, int ttl)
 {
-	xbuf_t *out = (xbuf_t *) malloc(sizeof(xbuf_t))
-		 , *cookie = gw_gen_cookie(input);
+	xbuf_t *out = (xbuf_t *) malloc(sizeof(xbuf_t));
 	char buf[32]
-	   , *time_str = time2rfc(time(NULL) + (60 * 60 * 24 * 365) // 1 year
-                             , buf);
-	xbuf_init(out);
-	xbuf_xcat(out, "Set-Cookie: auth=%s; expires=%s; path=/\r\n"
-		, cookie->ptr, time_str);
+	   , *time_str = time2rfc(time(NULL) + ttl, buf);
 
-	// if you need, you can use cookie
-	if(cookie_dst) *cookie_dst = cookie;
-	else xbuf_free(cookie);
+	xbuf_init(out);
+	xbuf_xcat(out, "Set-Cookie: %s=%s; expires=%s; path=/\r\n"
+		, name, value, time_str);
 
 	return out;
 }
@@ -486,29 +482,18 @@ gw_val_cond_t *gw_val_cond_new (char *field, int type)
 	gw_val_cond_t *cond = (gw_val_cond_t *) malloc(sizeof(gw_val_cond_t));
 	if(cond == NULL) return NULL;
 
-	cond->field = strdup(field);
+	cond->field = field;
 	cond->type = type;
 	cond->contains = NULL;
 
 	return cond;
 }
 
-void gw_val_cond_free(gw_val_cond_t *cond)
-{
-	free(cond->field);
-	if(cond->type == GW_VAL_CONTAINS)
-		free(cond->contains);
-	free(cond);
-}
-
 void gw_val_cond_set (gw_val_cond_t *cond, char *field, int type)
 {
 	if(cond == NULL) return;
 
-	free(cond->field);
-	if(cond->type == GW_VAL_CONTAINS)
-		free(cond->contains);
-	cond->field = strdup(field);
+	cond->field = field;
 	cond->type = type;
 	cond->len.min = 0;
 	cond->len.max = 0;
@@ -637,7 +622,7 @@ bool gw_validate_null (gw_val_cond_t *cond, char *field)
 bool gw_validate_contains (gw_val_cond_t *cond, char *field, char *contains)
 {
 	gw_val_cond_set(cond, field, GW_VAL_CONTAINS);
-	cond->contains = strdup(contains);
+	cond->contains = contains;
 
 	gw_validate_field(&cond, 1);
 
